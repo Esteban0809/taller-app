@@ -1,7 +1,10 @@
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
-from app.models.models import Reparacion
+from app.models.models import Reparacion, Vehiculo
+
+
+CON_VEHICULO = selectinload(Reparacion.vehiculo).selectinload(Vehiculo.cliente)
 
 
 class ReparacionRepository:
@@ -9,8 +12,23 @@ class ReparacionRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def listar(self, taller_id: int, estado: str | None, vehiculo_id: int | None, limite: int, offset: int):
-        consulta = select(Reparacion).where(Reparacion.taller_id == taller_id)
+    def listar(
+        self,
+        taller_id: int,
+        estado: str | None,
+        vehiculo_id: int | None,
+        activas: bool,
+        limite: int,
+        offset: int,
+    ):
+        consulta = (
+            select(Reparacion)
+            .options(CON_VEHICULO)
+            .where(Reparacion.taller_id == taller_id)
+        )
+
+        if activas:
+            consulta = consulta.where(Reparacion.estado != "entregado")
 
         if estado:
             consulta = consulta.where(Reparacion.estado == estado)
@@ -27,7 +45,7 @@ class ReparacionRepository:
 
     def obtener(self, reparacion_id: int, taller_id: int):
         return self.db.scalar(
-            select(Reparacion).where(
+            select(Reparacion).options(CON_VEHICULO).where(
                 Reparacion.id == reparacion_id,
                 Reparacion.taller_id == taller_id,
             )

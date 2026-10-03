@@ -103,3 +103,27 @@ def test_un_taller_no_ve_los_datos_de_otro(client, auth):
         "descripcion": "Intento de colarse",
     })
     assert reparacion.status_code == 404
+
+
+def test_reparacion_incluye_vehiculo_y_cliente_y_filtro_activas(client, auth):
+    _, vehiculo = crear_cliente_y_vehiculo(client, auth)
+
+    for descripcion in ("Frenos", "Aceite"):
+        client.post("/reparaciones", headers=auth, json={
+            "vehiculo_id": vehiculo["id"],
+            "descripcion": descripcion,
+        })
+
+    todas = client.get("/reparaciones", headers=auth).json()
+    assert todas[0]["vehiculo"]["matricula"] == "1234ABC"
+    assert todas[0]["vehiculo"]["cliente"]["nombre"] == "Juan Pérez"
+
+    client.patch(f"/reparaciones/{todas[0]['id']}/estado", headers=auth, json={"estado": "entregado"})
+
+    activas = client.get("/reparaciones?activas=true", headers=auth).json()
+    assert len(activas) == 1
+    assert activas[0]["estado"] != "entregado"
+
+
+def test_me_incluye_nombre_del_taller(client, auth):
+    assert client.get("/auth/me", headers=auth).json()["taller_nombre"] == "Taller Morrazo"

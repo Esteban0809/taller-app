@@ -88,6 +88,10 @@ class Usuario(Base):
 
     taller: Mapped["Taller"] = relationship(back_populates="usuarios")
 
+    @property
+    def taller_nombre(self) -> str:
+        return self.taller.nombre
+
 
 class Cliente(Base):
     __tablename__ = "clientes"

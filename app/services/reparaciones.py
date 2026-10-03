@@ -14,8 +14,16 @@ class ReparacionService:
         self.vehiculos = VehiculoRepository(repository.db)
         self.usuarios = UsuarioRepository(repository.db)
 
-    def listar(self, taller_id: int, estado: str | None, vehiculo_id: int | None, limite: int, offset: int):
-        return self.repository.listar(taller_id, estado, vehiculo_id, limite, offset)
+    def listar(
+        self,
+        taller_id: int,
+        estado: str | None,
+        vehiculo_id: int | None,
+        activas: bool,
+        limite: int,
+        offset: int,
+    ):
+        return self.repository.listar(taller_id, estado, vehiculo_id, activas, limite, offset)
 
     def obtener(self, reparacion_id: int, taller_id: int):
         reparacion = self.repository.obtener(reparacion_id, taller_id)
@@ -42,7 +50,8 @@ class ReparacionService:
             vehiculo.kilometros = kilometros
 
         reparacion = self.repository.crear(taller_id, datos)
-        return guardar(self.repository.db, reparacion)
+        guardar(self.repository.db, reparacion)
+        return self.obtener(reparacion.id, taller_id)
 
     def actualizar(self, reparacion_id: int, taller_id: int, datos: dict):
         reparacion = self.obtener(reparacion_id, taller_id)
@@ -51,7 +60,8 @@ class ReparacionService:
             self._comprobar_mecanico(datos["mecanico_id"], taller_id)
 
         self.repository.actualizar(reparacion, datos)
-        return guardar(self.repository.db, reparacion)
+        guardar(self.repository.db, reparacion)
+        return self.obtener(reparacion.id, taller_id)
 
     def cambiar_estado(self, reparacion_id: int, taller_id: int, estado: str):
         reparacion = self.obtener(reparacion_id, taller_id)
@@ -64,7 +74,8 @@ class ReparacionService:
         else:
             reparacion.fecha_entrega = None
 
-        return guardar(self.repository.db, reparacion)
+        guardar(self.repository.db, reparacion)
+        return self.obtener(reparacion.id, taller_id)
 
     def eliminar(self, reparacion_id: int, taller_id: int):
         reparacion = self.obtener(reparacion_id, taller_id)

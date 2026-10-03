@@ -33,6 +33,7 @@ class UsuarioRespuesta(BaseModel):
 
     id: int
     taller_id: int
+    taller_nombre: str
     nombre: str
     email: str
     rol: str

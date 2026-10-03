@@ -34,11 +34,30 @@ class CambioEstado(BaseModel):
     estado: EstadoReparacion
 
 
+class ClienteBreve(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    nombre: str
+    telefono: str | None
+
+
+class VehiculoBreve(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    matricula: str
+    marca: str | None
+    modelo: str | None
+    cliente: ClienteBreve
+
+
 class ReparacionRespuesta(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
     vehiculo_id: int
+    vehiculo: VehiculoBreve
     mecanico_id: int | None
     descripcion: str
     estado: str

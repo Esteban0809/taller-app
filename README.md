@@ -14,7 +14,7 @@ Multi-tenant SaaS backend for small car repair shops: customers, vehicles and re
 
 ## Stack
 
-FastAPI · SQLAlchemy 2.0 · Alembic · MySQL · Pydantic v2 · pytest · Docker · GitHub Actions
+FastAPI · SQLAlchemy 2.0 · Alembic · MySQL · Pydantic v2 · React 19 · Vite · pytest · Docker · GitHub Actions
 
 ## Architecture
 
@@ -39,6 +39,16 @@ cp .env.example .env          # fill in DB_PASSWORD and JWT_SECRET
 ```
 
 Interactive API docs: http://localhost:8000/docs
+
+## Frontend
+
+Mobile-first React app for mechanics (`frontend/`): login and workshop sign-up, a board of the cars currently in the shop with one-tap status changes, vehicle check-in by licence plate, customers, vehicle history and team management.
+
+```bash
+cd frontend
+npm install
+npm run dev        # http://localhost:5173 (proxies /api to the backend on :8000)
+```
 
 ## Tests
 

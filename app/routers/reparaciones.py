@@ -26,12 +26,13 @@ def obtener_servicio(db: Session = Depends(obtener_sesion)):
 def listar(
     estado: EstadoReparacion | None = None,
     vehiculo_id: int | None = None,
+    activas: bool = False,
     limite: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
     usuario=Depends(usuario_actual),
     service: ReparacionService = Depends(obtener_servicio),
 ):
-    return service.listar(usuario["taller_id"], estado, vehiculo_id, limite, offset)
+    return service.listar(usuario["taller_id"], estado, vehiculo_id, activas, limite, offset)
 
 
 @router.get("/resumen", response_model=ResumenTaller)
