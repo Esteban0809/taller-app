@@ -4,7 +4,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import { Aviso, Cargando, EtiquetaEstado, Matricula } from "../components/Comunes.jsx";
-import { ESTADOS, euros, fecha, limpiar } from "../utilidades.js";
+import { ESTADOS, enlaceSeguimiento, euros, fecha, limpiar, mensajeWhatsApp } from "../utilidades.js";
 
 export default function DetalleReparacion() {
   const { id } = useParams();
@@ -15,6 +15,7 @@ export default function DetalleReparacion() {
   const [datos, setDatos] = useState({ descripcion: "", presupuesto: "", precio_final: "" });
   const [error, setError] = useState("");
   const [mensaje, setMensaje] = useState("");
+  const [copiado, setCopiado] = useState(false);
 
   function rellenar(r) {
     setReparacion(r);
@@ -51,6 +52,12 @@ export default function DetalleReparacion() {
     } catch (err) {
       setError(err.message);
     }
+  }
+
+  async function copiarEnlace() {
+    await navigator.clipboard.writeText(enlaceSeguimiento(reparacion.token_seguimiento));
+    setCopiado(true);
+    setTimeout(() => setCopiado(false), 1500);
   }
 
   async function eliminar() {
@@ -100,6 +107,29 @@ export default function DetalleReparacion() {
           </button>
         ))}
       </div>
+
+      <h3>
+        Avisar al cliente
+        {reparacion.presupuesto > 0 && (
+          reparacion.presupuesto_aprobado_at
+            ? <span className="estado fondo-listo">Presupuesto aprobado</span>
+            : <span className="estado fondo-diagnostico">Presupuesto sin aprobar</span>
+        )}
+      </h3>
+      <div className="fila-botones">
+        {vehiculo.cliente.telefono && (
+          <a className="boton boton-whatsapp" href={mensajeWhatsApp(reparacion)} target="_blank" rel="noopener noreferrer">
+            WhatsApp
+          </a>
+        )}
+        <button className="boton boton-secundario" onClick={copiarEnlace}>
+          {copiado ? "¡Copiado!" : "Copiar enlace"}
+        </button>
+      </div>
+      <p className="nota">
+        El cliente ve el estado y puede aprobar el presupuesto desde{" "}
+        <a href={enlaceSeguimiento(reparacion.token_seguimiento)} target="_blank" rel="noopener noreferrer">su enlace</a>.
+      </p>
 
       <form onSubmit={guardar} className="formulario">
         <label>

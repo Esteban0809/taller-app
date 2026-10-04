@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useMatch } from "react-router-dom";
 
 import { useAuth } from "./auth.jsx";
 import { Cargando } from "./components/Comunes.jsx";
@@ -10,11 +10,15 @@ import FichaCliente from "./pages/FichaCliente.jsx";
 import FichaVehiculo from "./pages/FichaVehiculo.jsx";
 import Login from "./pages/Login.jsx";
 import NuevaEntrada from "./pages/NuevaEntrada.jsx";
+import Seguimiento from "./pages/Seguimiento.jsx";
 import Tablero from "./pages/Tablero.jsx";
 
 export default function App() {
   const { usuario, cargando } = useAuth();
+  const enlaceCliente = useMatch("/s/:token");
 
+  // El cliente entra desde su enlace sin cuenta: no pasa por el login
+  if (enlaceCliente) return <Seguimiento token={enlaceCliente.params.token} />;
   if (cargando) return <Cargando />;
   if (!usuario) return <Login />;
 
