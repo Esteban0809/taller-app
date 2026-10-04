@@ -4,7 +4,7 @@ from app.models.models import ESTADOS_REPARACION
 from app.repositories.reparaciones import ReparacionRepository
 from app.repositories.usuarios import UsuarioRepository
 from app.repositories.vehiculos import VehiculoRepository
-from app.services.base import guardar, no_encontrado
+from app.services.base import conflicto, guardar, no_encontrado
 
 
 class ReparacionService:
@@ -59,6 +59,10 @@ class ReparacionService:
         if "mecanico_id" in datos:
             self._comprobar_mecanico(datos["mecanico_id"], taller_id)
 
+        # Un presupuesto nuevo necesita que el cliente lo vuelva a aprobar
+        if "presupuesto" in datos and float(datos["presupuesto"]) != float(reparacion.presupuesto):
+            reparacion.presupuesto_aprobado_at = None
+
         self.repository.actualizar(reparacion, datos)
         guardar(self.repository.db, reparacion)
         return self.obtener(reparacion.id, taller_id)
@@ -81,6 +85,43 @@ class ReparacionService:
         reparacion = self.obtener(reparacion_id, taller_id)
         self.repository.eliminar(reparacion)
         guardar(self.repository.db)
+
+    def seguimiento(self, token: str):
+        reparacion = self.repository.obtener_por_token(token)
+
+        if not reparacion:
+            raise no_encontrado("Enlace de seguimiento no válido")
+
+        vehiculo = reparacion.vehiculo
+        return {
+            "taller_nombre": reparacion.taller.nombre,
+            "taller_telefono": reparacion.taller.telefono,
+            "cliente_nombre": vehiculo.cliente.nombre.split()[0],
+            "matricula": vehiculo.matricula,
+            "vehiculo": " ".join(filter(None, [vehiculo.marca, vehiculo.modelo])),
+            "descripcion": reparacion.descripcion,
+            "estado": reparacion.estado,
+            "presupuesto": float(reparacion.presupuesto),
+            "presupuesto_aprobado_at": reparacion.presupuesto_aprobado_at,
+            "fecha_entrada": reparacion.fecha_entrada,
+            "fecha_entrega": reparacion.fecha_entrega,
+        }
+
+    def aprobar_presupuesto(self, token: str):
+        reparacion = self.repository.obtener_por_token(token)
+
+        if not reparacion:
+            raise no_encontrado("Enlace de seguimiento no válido")
+        if reparacion.presupuesto <= 0:
+            raise conflicto("Todavía no hay presupuesto que aprobar")
+        if reparacion.presupuesto_aprobado_at is not None:
+            raise conflicto("El presupuesto ya está aprobado")
+        if reparacion.estado in ("listo", "entregado"):
+            raise conflicto("La reparación ya está terminada")
+
+        reparacion.presupuesto_aprobado_at = datetime.now()
+        guardar(self.repository.db, reparacion)
+        return self.seguimiento(token)
 
     def resumen(self, taller_id: int):
         conteo = self.repository.contar_por_estado(taller_id)

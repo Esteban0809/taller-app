@@ -51,6 +51,13 @@ class ReparacionRepository:
             )
         )
 
+    def obtener_por_token(self, token: str):
+        return self.db.scalar(
+            select(Reparacion)
+            .options(CON_VEHICULO, selectinload(Reparacion.taller))
+            .where(Reparacion.token_seguimiento == token)
+        )
+
     def crear(self, taller_id: int, datos: dict):
         reparacion = Reparacion(taller_id=taller_id, **datos)
         self.db.add(reparacion)

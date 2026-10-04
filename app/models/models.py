@@ -1,3 +1,4 @@
+import secrets
 from datetime import datetime
 from decimal import Decimal
 
@@ -20,6 +21,10 @@ from app.database.base import Base
 
 PLANES = ("prueba", "basico", "pro")
 ROLES = ("propietario", "mecanico")
+def nuevo_token_seguimiento() -> str:
+    return secrets.token_urlsafe(16)
+
+
 ESTADOS_REPARACION = (
     "recibido",
     "diagnostico",
@@ -197,5 +202,14 @@ class Reparacion(Base):
         onupdate=func.now(),
         nullable=False,
     )
+    # Enlace público para que el cliente siga la reparación sin cuenta
+    token_seguimiento: Mapped[str] = mapped_column(
+        String(32),
+        default=nuevo_token_seguimiento,
+        unique=True,
+        nullable=False,
+    )
+    presupuesto_aprobado_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     vehiculo: Mapped["Vehiculo"] = relationship(back_populates="reparaciones")
+    taller: Mapped["Taller"] = relationship()

@@ -33,3 +33,36 @@ export function limpiar(datos, camposNumericos = []) {
   }
   return resultado;
 }
+
+export const enlaceSeguimiento = (token) => `${window.location.origin}/s/${token}`;
+
+// wa.me necesita el número con prefijo de país y sin símbolos
+export function telefonoWhatsApp(telefono) {
+  let digitos = (telefono ?? "").replace(/\D/g, "");
+  if (digitos.startsWith("00")) digitos = digitos.slice(2);
+  if (digitos.length === 9) digitos = `34${digitos}`; // móvil español sin prefijo
+  return digitos;
+}
+
+export function mensajeWhatsApp(reparacion) {
+  const { vehiculo } = reparacion;
+  const nombre = vehiculo.cliente.nombre.split(" ")[0];
+  const coche = [vehiculo.marca, vehiculo.modelo].filter(Boolean).join(" ") || vehiculo.matricula;
+  const enlace = enlaceSeguimiento(reparacion.token_seguimiento);
+  const pendienteAprobar = reparacion.presupuesto > 0 && !reparacion.presupuesto_aprobado_at;
+
+  const textos = {
+    recibido: `Hola ${nombre}, hemos recibido tu ${coche}. Puedes seguir la reparación aquí: ${enlace}`,
+    diagnostico: `Hola ${nombre}, estamos revisando tu ${coche}. Te avisamos en cuanto sepamos qué tiene: ${enlace}`,
+    esperando_piezas: `Hola ${nombre}, estamos esperando las piezas para tu ${coche}. Síguelo aquí: ${enlace}`,
+    en_reparacion: `Hola ${nombre}, ya estamos reparando tu ${coche}. Síguelo aquí: ${enlace}`,
+    listo: `¡Hola ${nombre}! Tu ${coche} ya está listo para recoger 🚗✅ ${enlace}`,
+    entregado: `Gracias por confiar en nosotros, ${nombre}. ¡Buen viaje!`,
+  };
+
+  const texto = pendienteAprobar && ["diagnostico", "esperando_piezas"].includes(reparacion.estado)
+    ? `Hola ${nombre}, ya tenemos el presupuesto de tu ${coche}: ${euros(reparacion.presupuesto)}. Puedes verlo y aprobarlo aquí: ${enlace}`
+    : textos[reparacion.estado];
+
+  return `https://wa.me/${telefonoWhatsApp(vehiculo.cliente.telefono)}?text=${encodeURIComponent(texto)}`;
+}
