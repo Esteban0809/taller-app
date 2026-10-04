@@ -64,3 +64,23 @@ Tests run against an in-memory SQLite database, so no MySQL is needed.
 docker compose up --build
 docker compose exec api alembic upgrade head
 ```
+
+## Deploy (AWS, single server)
+
+Production runs on one small EC2 instance (`t4g.micro`, Amazon Linux 2023) with Docker Compose: MySQL, the API and Caddy serving the React build with automatic HTTPS.
+
+```
+deploy/
+├── docker-compose.prod.yml   db + api (runs migrations on start) + web
+├── web.Dockerfile            builds the frontend and serves it with Caddy
+├── Caddyfile                 /api/* → API, everything else → React app
+└── servidor-init.sh          EC2 user data: swap, Docker, clone, secrets, start
+```
+
+`servidor-init.sh` generates `deploy/.env` (DB passwords, `JWT_SECRET`, `DOMINIO`) on the server itself, so secrets never touch git. Without a custom domain it uses `<elastic-ip>.sslip.io`, which Let's Encrypt can issue a certificate for.
+
+To update a running server (via SSM Session Manager, no SSH needed):
+
+```bash
+cd /opt/taller-app && git pull && cd deploy && docker compose -f docker-compose.prod.yml up -d --build
+```

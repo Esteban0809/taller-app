@@ -1,0 +1,60 @@
+# Producción en un único servidor: MySQL + API + web (Caddy con HTTPS automático).
+# Los secretos vienen de deploy/.env, que se genera en el servidor y nunca se sube a git.
+name: taller
+
+services:
+
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    # Ajustes para servidores pequeños (1 GB de RAM)
+    command: --performance-schema=OFF --innodb-buffer-pool-size=64M --max-connections=50
+    environment:
+      MYSQL_DATABASE: taller_app
+      MYSQL_USER: taller
+      MYSQL_PASSWORD: ${DB_PASSWORD:?falta DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?falta DB_ROOT_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  api:
+    build: ..
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_USER: taller
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: taller_app
+      JWT_SECRET: ${JWT_SECRET:?falta JWT_SECRET}
+    # Aplica las migraciones pendientes antes de arrancar
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips='*'"
+
+  web:
+    build:
+      context: ../frontend
+      dockerfile: ../deploy/web.Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      DOMINIO: ${DOMINIO:?falta DOMINIO}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  mysql_data:
+  caddy_data:
+  caddy_config:

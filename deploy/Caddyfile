@@ -1,0 +1,16 @@
+# HTTPS automático con Let's Encrypt para el dominio de DOMINIO
+{$DOMINIO} {
+	encode gzip
+
+	# La API va por /api, igual que con el proxy de Vite en desarrollo
+	handle_path /api/* {
+		reverse_proxy api:8000
+	}
+
+	# React Router: cualquier otra ruta (/s/<token>, /reparaciones/1...) carga index.html
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}
