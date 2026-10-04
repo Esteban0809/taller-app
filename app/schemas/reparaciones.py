@@ -66,6 +66,24 @@ class ReparacionRespuesta(BaseModel):
     kilometros_entrada: int | None
     fecha_entrada: datetime
     fecha_entrega: datetime | None
+    token_seguimiento: str
+    presupuesto_aprobado_at: datetime | None
+
+
+class Seguimiento(BaseModel):
+    """Lo que ve el cliente desde su enlace: sin ids internos ni datos de otros."""
+
+    taller_nombre: str
+    taller_telefono: str | None
+    cliente_nombre: str
+    matricula: str
+    vehiculo: str
+    descripcion: str
+    estado: str
+    presupuesto: float
+    presupuesto_aprobado_at: datetime | None
+    fecha_entrada: datetime
+    fecha_entrega: datetime | None
 
 
 class ResumenTaller(BaseModel):
