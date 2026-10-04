@@ -10,6 +10,17 @@ RAMA="${RAMA:-main}"
 REPO="https://github.com/Esteban0809/taller-app.git"
 DIR=/opt/taller-app
 
+# La IP fija se asocia justo después de arrancar: esperar a tenerla antes de
+# descargar nada, para que el cambio de IP no corte ninguna descarga a medias
+if [ -n "${IP_FIJA:-}" ]; then
+  for _ in $(seq 60); do
+    TOKEN=$(curl -s -X PUT http://169.254.169.254/latest/api/token -H "X-aws-ec2-metadata-token-ttl-seconds: 60")
+    IP_ACTUAL=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/public-ipv4 || true)
+    [ "$IP_ACTUAL" = "$IP_FIJA" ] && break
+    sleep 5
+  done
+fi
+
 # 2 GB de swap: con 1 GB de RAM, MySQL + compilar el frontend se queda corto
 if [ ! -f /swapfile ]; then
   dd if=/dev/zero of=/swapfile bs=1M count=2048
